@@ -17,15 +17,10 @@ const smartapp = new SmartApp()
       page.section('lights', section => {
         section.deviceSetting('colorLight')
             .capabilities(['colorControl', 'switch', 'switchLevel'])
-            .permissions('rx')
+            .permissions('rx');
       });
     })
     .updated(async ctx => {
-        // const weatherData = await weather.getCurrentWeather(ctx.configStringValue('zipCode'));
-        // const groundCoordinates = weather.parseCoordinates(weatherData);
-        // ctx.api.state.longitude = groundCoordinates.longitude;
-        // ctx.api.state.latitude = groundCoordinates.latitude;
-
         await ctx.api.schedules.unscheduleAll();
         // poll for ISS every 1 minute
         await ctx.api.schedules.schedule('issTrackerHandler', `* * * * ? *`);
@@ -34,22 +29,14 @@ const smartapp = new SmartApp()
     })
     .scheduledEventHandler('issTrackerHandler', async ctx => {
         // tracker schedule logic
-
-        /**
-         * NEED TO REMOVE weather api call from issTracker handler, find way to store coordinates after init/update
-         */
         const weatherData = await weather.getCurrentWeather(ctx.configStringValue('zipCode'));
         const groundCoordinates = weather.parseCoordinates(weatherData);
-        console.log('groundCoordinates = ');
-        console.log(groundCoordinates);
         const issData = await issTracker.getIssData();
         const issCoordinates = issTracker.parseCoordinates(issData);
-        console.log('issCoordinates = ');
-        console.log(issCoordinates);
         const switchLevel = issTracker.getSwitchLevelForLocation(groundCoordinates, issCoordinates);
         let switchCommand;
 
-        // if dim value is <= 0, turn the light off
+        // if dim value is < 1, turn the light off
         if (switchLevel < 1) {
             switchCommand = 'off';
         } else {
